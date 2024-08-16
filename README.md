@@ -97,7 +97,7 @@ def log_trade_to_csv(today, entry_time, entry_price, direction, exit_price, exit
 1. **Run the script:**
 
    ```bash
-   python futures_1min_ORB.py
+   python futures_1min_ORB_Live.py
    ```
 
 2. **Monitor Logs:**
