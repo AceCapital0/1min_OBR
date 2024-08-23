@@ -26,7 +26,7 @@ time_2 = t(15, 1)
 fut_expiry = 'NIFTY24AUGFUT'
 target = 30
 stoploss = 15
-order = 0
+order = 2
 today = datetime.now().strftime('%Y-%m-%d')
 
 log_file = "Future_ORB_paper.csv"
