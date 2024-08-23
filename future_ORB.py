@@ -21,12 +21,12 @@ kite = Zerodha(user_id='NX5644', password='Sanjay400@', twofa='Z2RKD6DPOV3GRL3DK
 kite.login()
 
 # Define trading parameters
-time_1 = t(9, 17)
-time_2 = t(15, 1)
+time_1 = t(3, 47)  # 9:17 AM IST -> 3:47 AM UTC
+time_2 = t(9, 31)  # 3:01 PM IST -> 9:31 AM UTC
 fut_expiry = 'NIFTY24AUGFUT'
 target = 30
 stoploss = 15
-order = 2
+order = 0
 today = datetime.now().strftime('%Y-%m-%d')
 
 log_file = "Future_ORB_paper.csv"
@@ -64,12 +64,8 @@ orb = False
 
 def get_volume_factor(volume, avg_volume):
     """Determine the volume factor based on the current volume and average volume."""
-    if volume > (avg_volume * 3.5):
-        return 10
-    elif volume > (avg_volume * 3):
-        return 7.5
-    elif volume > (avg_volume * 2.5):
-        return 5
+    if volume > (avg_volume * 2.5):
+        return 3
     return None
 
 def adjust_trailing_sl(current_price, sl, factor, order):
@@ -134,7 +130,7 @@ if order == 0:
         
 # Main loop
 while True:
-    now = datetime.now()
+    now = datetime.utcnow()  
 
     # ORB Breakout Condition
     if not orb_breakout_occurred and time_1 < t(now.hour, now.minute) < time_2 and order == 0 and now.second == 1:
@@ -224,14 +220,14 @@ while True:
                 exit_reason = 'Target Hit'
             elif premium <= sl:
                 exit_reason = 'Stoploss Hit'
-            elif t(now.hour, now.minute) == t(15, 20):
+            elif t(now.hour, now.minute) == t(9, 50):
                 exit_reason = 'Market Close'
         elif order == -1:
             if premium <= tgt:
                 exit_reason = 'Target Hit'
             elif premium >= sl:
                 exit_reason = 'Stoploss Hit'
-            elif t(now.hour, now.minute) == t(15, 20):
+            elif t(now.hour, now.minute) == t(9, 50):
                 exit_reason = 'Market Close'
         
         if exit_reason:
