@@ -2,7 +2,7 @@
 """
 Created on Wed Jul 31 11:06:54 2024
 
-@author: aceca
+@author: Vinay Kumar
 """
 
 import pandas as pd
@@ -13,7 +13,7 @@ import csv
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, filename='trading_debug.log', filemode='w',
+logging.basicConfig(level=logging.DEBUG, filename='trading_paper_debug.log', filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Initialize Zerodha API
@@ -22,14 +22,14 @@ kite.login()
 
 # Define trading parameters
 time_1 = t(9, 17)
-time_2 = t(15, 0)
+time_2 = t(15, 1)
 fut_expiry = 'NIFTY24AUGFUT'
 target = 30
 stoploss = 15
 order = 0
 today = datetime.now().strftime('%Y-%m-%d')
 
-log_file = "Future_ORB.csv"
+log_file = "Future_ORB_paper.csv"
 headers = ['Date', 'Time', 'Entry Price', 'BUY/SELL', 'Exit Price', 'Exit Time', 'Exit Reason', 'PNL']
 
 
@@ -47,28 +47,6 @@ def log_trade_to_csv(today, entry_time, entry_price, direction, exit_price, exit
         writer = csv.writer(file)
         writer.writerow([today, entry_time, entry_price, direction, exit_price, exit_time, exit_reason, pnl])
 
-# Function to check if an ORB entry already exists for the day
-def check_orb_entry(log_file, today):
-    try:
-        with open(log_file, 'r') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                if row['Date'] == today:
-                    return True
-    except FileNotFoundError:
-        return False
-    return False
-
-orb_entry_exists = check_orb_entry(log_file, today)
-
-if orb_entry_exists:
-    order = 2
-    print("ORB entry already exists for today. Skipping ORB and proceeding to volume-based entries.")
-    logging.info("ORB entry already exists for today. Skipping ORB and proceeding to volume-based entries.")
-else:
-    print("No ORB entry for today. Proceeding with ORB logic.")
-    logging.info("No ORB entry for today. Proceeding with ORB logic.")
-
 # Get instrument details
 instruments = pd.DataFrame(kite.instruments())
 instruments.to_csv('instruments.csv')
@@ -82,7 +60,6 @@ factor = None
 volume_high = None
 volume_low = None
 volume_spike_time = None
-move_sl_to_cost = False
 orb = False
 
 def get_volume_factor(volume, avg_volume):
@@ -127,7 +104,7 @@ def update_volume_conditions(factor, last_row):
 
 # Check for past ORB breakout
 orb_breakout_occurred = False
-if not orb_entry_exists and order == 0:
+if order == 0:
     olhc = kite.historical_data(instrument_token=underlying_inst_id, from_date=today, to_date=today, interval="minute")
     olhc = pd.DataFrame(olhc)
     
@@ -160,7 +137,7 @@ while True:
     now = datetime.now()
 
     # ORB Breakout Condition
-    if not orb_entry_exists and not orb_breakout_occurred and time_1 < t(now.hour, now.minute) < time_2 and order == 0 and now.second == 1:
+    if not orb_breakout_occurred and time_1 < t(now.hour, now.minute) < time_2 and order == 0 and now.second == 1:
         print(f"Checking ORB conditions at {now}")
         logging.info(f"Checking ORB conditions at {now}")
 
@@ -319,6 +296,7 @@ while True:
                     entry_time = datetime.now().strftime('%H:%M:%S')
                     tgt = buy_future + target
                     sl = buy_future - stoploss
+                    move_sl_to_cost = False
                     order = 1
                     print(f"{now} Volume-Based Buy at: {buy_future}, Target: {tgt}, Stoploss: {sl}")
                     logging.info(f"{now} Volume-Based Buy at: {buy_future}, Target: {tgt}, Stoploss: {sl}")
@@ -340,6 +318,7 @@ while True:
                     entry_time = datetime.now().strftime('%H:%M:%S')
                     tgt = sell_future - target
                     sl = sell_future + stoploss
+                    move_sl_to_cost = False
                     order = -1
                     print(f"{now} Volume-Based Sell at: {sell_future}, Target: {tgt}, Stoploss: {sl}")
                     logging.info(f"{now} Volume-Based Sell at: {sell_future}, Target: {tgt}, Stoploss: {sl}")
