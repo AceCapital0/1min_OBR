@@ -11,9 +11,10 @@ This Python script implements an automated trading strategy for Nifty Futures. T
    - [Opening Range Breakout (ORB)](#opening-range-breakout-orb)
    - [Volume-Based Entries](#volume-based-entries)
    - [Trailing Stop-Loss](#trailing-stop-loss)
-5. [Logging Trades](#logging-trades)
-6. [Execution](#execution)
-7. [License](#license)
+5. [Adjustments and Changes](#Adjustments-and-Changes)
+6. [Logging Trades](#logging-trades)
+7. [Execution](#execution)
+8. [License](#license)
 
 ## Requirements
 
@@ -70,6 +71,18 @@ This Python script implements an automated trading strategy for Nifty Futures. T
 
 - For ORB trades, the stop-loss is initially set and trails as the price moves in the favorable direction.
 - The trailing stop-loss is adjusted based on a predefined factor for volume-based entries.
+
+## Adjustments and Changes
+
+1. **Trailing Stop-Loss Adjustment:**
+   - The trailing stop-loss is now only adjusted when a 2.5x volume spike is detected. The stop-loss will trail directly by 5 points, bypassing the previous logic of moving to the entry cost first.
+
+2. **Auto Square-Off after 20 Candles:**
+   - After executing a Buy or Sell position, if the position has not been exited after 20 candles, the system will automatically square off the position.
+
+3. **Change in Terminology from Futures to Options:**
+   - "Future Buy" has been replaced with "Call Buy."
+   - "Future Sell" has been replaced with "Put Buy."
 
 ## Logging Trades
 
