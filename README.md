@@ -11,7 +11,7 @@ This Python script implements an automated trading strategy for Nifty Futures. T
    - [Opening Range Breakout (ORB)](#opening-range-breakout-orb)
    - [Volume-Based Entries](#volume-based-entries)
    - [Trailing Stop-Loss](#trailing-stop-loss)
-5. [Phase 2: Changes](#Phase-2:-Changes)
+5. [Phase 2 Changes](#Phase-2-Changes)
    - [Volume Spike Criteria](#Volume-Spike-Criteria)
    - [Exit Strategy](#Exit-Strategy)
    - [Adjustments and Changes](#Adjustments-and-Changes)
@@ -78,7 +78,7 @@ This Python script implements an automated trading strategy for Nifty Futures. T
 Here’s the updated document with the added adjustments and changes paragraph:
 
 ---
-## Phase 2: Changes
+## Phase 2 Changes
 
 ### Volume Spike Criteria
 - A volume spike is identified when the volume is greater than the EMA of the previous 10 candles multiplied by a factor of 2.5.
