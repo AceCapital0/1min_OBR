@@ -457,7 +457,7 @@ while True:
                                                 strike_price=strike_price)
             ltp = pd.DataFrame(ltp['Success'])
             premium = ltp['ltp'][0] 
-            if premium <= sl + factor + 15:
+            if premium >= sl + factor + 15:
                 sl = adjust_trailing_sl(premium, sl, factor, order)
                 print(f"Stop Loss trailed. Premium: {premium}, New SL: {sl}")
                 logging.info(f"Stop Loss trailed. Premium: {premium}, New SL: {sl}")
