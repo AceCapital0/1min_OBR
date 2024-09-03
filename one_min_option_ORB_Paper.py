@@ -24,8 +24,8 @@ volume_high = None
 volume_low = None
 move_sl_to_cost = False
 orb = False
-time_1 = t(3, 47)  # 9:17 AM IST -> 3:47 AM UTC
-time_2 = t(9, 40)  # 3:01 PM IST -> 9:31 AM UTC
+time_1 = t(9, 15)
+time_2 = t(15, 30)
 target = 30
 stoploss = 15
 order = 0
@@ -269,7 +269,7 @@ while True:
         current_time = datetime.now()
 
         time_difference = (current_time - entry_time).total_seconds() / 60
-        print(time_difference)
+        #print(time_difference)
         exit_reason = ''
         if order == 1: 
         
@@ -287,7 +287,7 @@ while True:
                 exit_reason = 'Stoploss Hit'
             elif time_difference > 30:
                 exit_reason = '30 candle hit'
-            elif t(now.hour, now.minute) == t(9, 50):
+            elif t(now.hour, now.minute) == t(15, 20):
                 exit_reason = 'Market Close'
         elif order == -1:
             ltp = breeze.get_option_chain_quotes(stock_code="NIFTY",
@@ -304,7 +304,7 @@ while True:
                 exit_reason = 'Stoploss Hit'
             elif time_difference > 30:
                 exit_reason = '30 candle hit'
-            elif t(now.hour, now.minute) == t(9, 50):
+            elif t(now.hour, now.minute) == t(15, 20):
                 exit_reason = 'Market Close'
         
         if exit_reason:
@@ -357,14 +357,18 @@ while True:
             while True:
                 time.sleep(1)
                 current_time = datetime.now()
+                for j in range(0, 5):
+                    try:
                 # Fetch updated OHLC data for real-time checking
-                ltp = breeze.get_option_chain_quotes(stock_code="NIFTY",
-                                                    exchange_code="NFO",
-                                                    product_type="futures",
-                                                    expiry_date=expiry_date)
+                        ltp = breeze.get_option_chain_quotes(stock_code="NIFTY",
+                                                            exchange_code="NFO",
+                                                            product_type="futures",
+                                                            expiry_date=expiry_date)
+                    except:
+                        pass 
                 ltp = pd.DataFrame(ltp['Success'])
                 latest_candle = ltp['ltp'][0]
-                print(volume_high, volume_low, latest_candle)    
+                #print(volume_high, volume_low, latest_candle)    
                 # Check if breakout conditions are met
                 if latest_candle > volume_high:
                     ltp = breeze.get_quotes(stock_code="NIFTY",
