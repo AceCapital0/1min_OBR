@@ -24,8 +24,8 @@ volume_high = None
 volume_low = None
 move_sl_to_cost = False
 orb = False
-time_1 = t(9, 15)
-time_2 = t(15, 30)
+time_1 = t(3, 47)  # 9:17 AM IST -> 3:47 AM UTC
+time_2 = t(9, 31)  # 3:01 PM IST -> 9:31 AM UTC
 target = 30
 stoploss = 15
 order = 0
@@ -287,7 +287,7 @@ while True:
                 exit_reason = 'Stoploss Hit'
             elif time_difference > 30:
                 exit_reason = '30 candle hit'
-            elif t(now.hour, now.minute) == t(15, 20):
+            elif t(now.hour, now.minute) == t(9, 50):
                 exit_reason = 'Market Close'
         elif order == -1:
             ltp = breeze.get_option_chain_quotes(stock_code="NIFTY",
@@ -304,7 +304,7 @@ while True:
                 exit_reason = 'Stoploss Hit'
             elif time_difference > 30:
                 exit_reason = '30 candle hit'
-            elif t(now.hour, now.minute) == t(15, 20):
+            elif t(now.hour, now.minute) == t(9, 50):
                 exit_reason = 'Market Close'
         
         if exit_reason:
