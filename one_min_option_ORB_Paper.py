@@ -357,16 +357,16 @@ while True:
             while True:
                 time.sleep(1)
                 current_time = datetime.now()
-                #for j in range(0, 5):
-                #    try:
+                for j in range(0, 5):
+                    try:
                 # Fetch updated OHLC data for real-time checking
-                ltp = breeze.get_option_chain_quotes(stock_code="NIFTY",
-                                                     exchange_code="NFO",
-                                                     product_type="futures",
-                                                     expiry_date=expiry_date)
-                #    except:
-                #        pass 
-                ltp = pd.DataFrame(ltp['Success'])
+                        df = breeze.get_option_chain_quotes(stock_code="NIFTY",
+                                                             exchange_code="NFO",
+                                                             product_type="futures",
+                                                             expiry_date=expiry_date)
+                    except:
+                        pass 
+                ltp = pd.DataFrame(df['Success'])
                 latest_candle = ltp['ltp'][0]
                 #print(volume_high, volume_low, latest_candle)    
                 # Check if breakout conditions are met
