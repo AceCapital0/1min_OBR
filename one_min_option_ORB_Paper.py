@@ -14,7 +14,7 @@ import logging
 
 # Initialize ICICI Breeze API
 breeze = BreezeConnect(api_key="S43813906421*qTB5O98pn4i5r386290")  # Replace with your API key
-breeze.generate_session(api_secret="2pc136H426=9j7o+32(67179+C19Ba99", session_token="46626435")  
+breeze.generate_session(api_secret="2pc136H426=9j7o+32(67179+C19Ba99", session_token="46962556")  
 
 # Define trading parameters
 Call_Buy = None
@@ -25,11 +25,11 @@ volume_low = None
 move_sl_to_cost = False
 orb = False
 time_1 = t(3, 47)  # 9:17 AM IST -> 3:47 AM UTC
-time_2 = t(9, 31)  # 3:01 PM IST -> 9:31 AM UTC
+time_2 = t(9, 45)  # 3:01 PM IST -> 9:31 AM UTC
 target = 30
 stoploss = 15
 order = 0
-quantity="25"
+quantity="50"
 today = datetime.now().strftime("%Y-%m-%d")
 fut_expiry  = "2024-09-26"
 option_expiry_date = "2024-09-05"
