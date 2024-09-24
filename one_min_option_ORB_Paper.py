@@ -7,14 +7,15 @@ Created on Mon Aug 26 12:15:31 2024
 
 import pandas as pd
 import time
-from datetime import datetime, timedelta, time as t
+from datetime import datetime, time as t
 import csv
 from breeze_connect import BreezeConnect
 import logging
 
 # Initialize ICICI Breeze API
-breeze = BreezeConnect(api_key="S43813906421*qTB5O98pn4i5r386290")  # Replace with your API key
-breeze.generate_session(api_secret="2pc136H426=9j7o+32(67179+C19Ba99", session_token="46962556")  
+breeze = BreezeConnect(api_key="77%U3I71634^099gN232777%316Q~v4=")
+breeze.generate_session(api_secret="9331K77(I8_52JG2K73$5438q95772j@",
+                        session_token="47492870")
 
 # Define trading parameters
 Call_Buy = None
@@ -24,23 +25,24 @@ volume_high = None
 volume_low = None
 move_sl_to_cost = False
 orb = False
-time_1 = t(3, 47)  # 9:17 AM IST -> 3:47 AM UTC
-time_2 = t(9, 45)  # 3:01 PM IST -> 9:31 AM UTC
+time_1 = t(9, 15)
+time_2 = t(15, 30)
 target = 30
 stoploss = 15
 order = 0
-quantity="25"
+quantity="100"
 today = datetime.now().strftime("%Y-%m-%d")
 fut_expiry  = "2024-09-26"
-option_expiry_date = "2024-09-12"
+option_expiry_date = "2024-09-26"
 expiry_date = f"{fut_expiry}T07:00:00.000Z"
 option_expiry = f"{option_expiry_date}T07:00:00.000Z"
 
+
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, filename='1min_Orb_paper_trading_debug.log', filemode='w',
+logging.basicConfig(level=logging.DEBUG, filename='Orb_paper_without_tgt_debug.log', filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-log_file = "1min_Orb_paper_trading.csv"
+log_file = "Orb_paper_without_tgt.csv"
 headers = ['Date', 'Time', 'Entry Price', 'BUY/SELL', 'Exit Price', 'Exit Time', 'Exit Reason', 'PNL']
 
 
@@ -61,13 +63,19 @@ def log_trade_to_csv(today, entry_time, entry_price, direction, exit_price, exit
 def get_volume_factor(volume, avg_volume):
     """Determine the volume factor based on the current volume and average volume."""
     if volume > (avg_volume * 2.5):
-        return 2
+        return True
     return None
 
-def adjust_trailing_sl(current_price, sl, factor, order):
+def get_volume_factor2(volume, avg_volume):
+    """Determine the volume factor based on the current volume and average volume."""
+    if volume > (avg_volume * 2):
+        return True
+    return None
+
+def adjust_trailing_sl(current_price, sl, order):
     """Adjust the trailing stop-loss based on the current price and factor."""
     if order in [1, -1]:
-        new_sl = sl + factor
+        new_sl = sl + 1
         return new_sl
 
 
@@ -81,6 +89,12 @@ def update_volume_conditions(factor, last_row):
     volume_low = last_row['low']
     logging.info(f"{datetime.now()} Volume condition met with factor: {factor}, High={volume_high}, Low={volume_low}")
 
+def update_volume_conditions2(factor, last_row, last_row2):
+    """Update volume high and low based on the latest volume spike candle."""
+    global volume_high, volume_low
+    volume_high = max(last_row['high'], last_row2['high'])
+    volume_low = min(last_row['low'], last_row2['low'])
+    logging.info(f"{datetime.now()} Volume condition met with factor: {factor}, High={volume_high}, Low={volume_low}")
 
 def retry_api_call(func, retries=5, delay=5, backoff=2):
     """Retry API calls with exponential backoff."""
@@ -268,23 +282,35 @@ while True:
                                       expiry_date=expiry_date,
                                       right="others")
         olhc = pd.DataFrame(vol_hist['Success'])
-        avg_volume = olhc['volume'].ewm(span=10, min_periods=10).mean().iloc[-1]  # Use second last row for previous candle's EMA
-        last_row = olhc.iloc[-1]  # Last completed candle
+        avg_volume = olhc['volume'].ewm(span=10, min_periods=10).mean().iloc[-2]  # Use second last row for previous candle's EMA
+        last_row = olhc.iloc[-2]  # Last completed candle
         factor = get_volume_factor(last_row['volume'], avg_volume)
-        print(f"Volume-Based Re-entry with factor {factor}{now}. Last close: {last_row['close']}, last volume: {last_row['volume']}, avg volume: {avg_volume}")
+        avg_volume2 = olhc['volume'].ewm(span=10, min_periods=10).mean().iloc[-3]  # Use second last row for previous candle's EMA
+        last_row2 = olhc.iloc[-3]  # Last completed candle
+        mul1 = get_volume_factor2(last_row2['volume'], avg_volume2)
+        mul2 = get_volume_factor2(last_row['volume'], avg_volume)
+        print(f"Volume-Based Re-entry with factor {factor}, {now}. Last close: {last_row['close']}, last volume: {last_row['volume']}, avg volume: {avg_volume}")
+        
         if factor:
+            print(f"factor {factor}, {now}. Last close: {last_row['close']}, last volume: {last_row['volume']}, avg volume: {avg_volume}")
             update_volume_conditions(factor, last_row)
-            
-            while True:
+            candle_count = 0
+            while candle_count < 10:
                 time.sleep(1)
                 current_time = datetime.now()
-                detail = get_future_quotes_with_retry(stock_code="NIFTY", exchange_code="NFO",
-                                                      product_type="futures", expiry_date=expiry_date)
- 
-                ltp = pd.DataFrame(detail['Success'])
-                latest_candle = ltp['ltp'][0]   
+                olhc = breeze.get_historical_data_v2(interval="1minute",
+                                                    from_date= f"{today}T09:15:00.000Z",
+                                                    to_date= f"{today}T15:30:00.000Z",
+                                                    stock_code="NIFTY",
+                                                    exchange_code="NFO",
+                                                    product_type="futures",
+                                                    expiry_date = expiry_date,
+                                                    right="others")
+                olhc = pd.DataFrame(olhc['Success'])
+                latest_candle = olhc.iloc[-1]
+
                 # Check if breakout conditions are met
-                if latest_candle > volume_high:
+                if latest_candle['close'] > volume_high:
                     ltp = get_quotes_with_retry(stock_code="NIFTY", exchange_code="NSE",
                                                 product_type="cash", right="others", strike_price="0")
                     ltp = pd.DataFrame(ltp['Success'])
@@ -308,7 +334,7 @@ while True:
                     logging.info(f"{now} Volume-Based Call Buy at: {Call_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
                     break
                 
-                elif latest_candle < volume_low:
+                elif latest_candle['close'] < volume_low:
                     ltp = get_quotes_with_retry(stock_code="NIFTY", exchange_code="NSE",
                                                 product_type="cash", right="others", strike_price="0")
                     ltp = pd.DataFrame(ltp['Success'])
@@ -332,6 +358,79 @@ while True:
                     print(f"{now} Volume-Based Put Buy at: {Put_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
                     logging.info(f"{now} Volume-Based Put Buy at: {Put_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
                     break
+                candle_count += 1
+                time.sleep(60)
+                
+        elif mul1 and mul2:
+            print(f"Two candle match {now}. 1st close: {last_row2['close']} 2nd close: {last_row['close']}, volumes: {last_row2['volume']}, {last_row['volume']}, volumes: {avg_volume2}, {avg_volume}")
+            update_volume_conditions2(factor, last_row, last_row2)
+            candle_count = 0
+            while candle_count < 10:
+                time.sleep(1)
+                current_time = datetime.now()
+                olhc = breeze.get_historical_data_v2(interval="1minute",
+                                                    from_date= f"{today}T09:15:00.000Z",
+                                                    to_date= f"{today}T15:30:00.000Z",
+                                                    stock_code="NIFTY",
+                                                    exchange_code="NFO",
+                                                    product_type="futures",
+                                                    expiry_date = expiry_date,
+                                                    right="others")
+                olhc = pd.DataFrame(olhc['Success'])
+                latest_candle = olhc.iloc[-1]
+
+                # Check if breakout conditions are met
+                if latest_candle['close'] > volume_high:
+                    ltp = get_quotes_with_retry(stock_code="NIFTY", exchange_code="NSE",
+                                                product_type="cash", right="others", strike_price="0")
+                    ltp = pd.DataFrame(ltp['Success'])
+                    strike_price= round_to_nearest_50(ltp['ltp'][0])
+                    # Call Buy condition met
+                    detail = get_option_chain_quotes_with_retry(stock_code="NIFTY", exchange_code="NFO",
+                                                                product_type="options", expiry_date=option_expiry,
+                                                                right="call", strike_price=strike_price)
+                    price = pd.DataFrame(detail['Success'])
+                    premium = price['ltp'][0] 
+                    
+                    Call_Buy = round(premium, 2)
+                    right = 'Call_Buy'
+                    entry_time = datetime.now().strftime('%H:%M:%S')
+                    tgt = Call_Buy + target
+                    sl = Call_Buy - stoploss
+                    order = 1
+                    entry_time = datetime.strptime(entry_time, '%H:%M:%S')
+                    entry_time = current_time.replace(hour=entry_time.hour, minute=entry_time.minute, second=entry_time.second, microsecond=0)
+                    print(f"{now} Volume-Based call Buy at: {Call_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
+                    logging.info(f"{now} Volume-Based Call Buy at: {Call_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
+                    break
+                
+                elif latest_candle['close'] < volume_low:
+                    ltp = get_quotes_with_retry(stock_code="NIFTY", exchange_code="NSE",
+                                                product_type="cash", right="others", strike_price="0")
+                    ltp = pd.DataFrame(ltp['Success'])
+                    strike_price= round_to_nearest_50(ltp['ltp'][0])
+                    
+                    # Put Buy condition met
+                    detail = get_option_chain_quotes_with_retry(stock_code="NIFTY", exchange_code="NFO",
+                                                                product_type="options", expiry_date=option_expiry,
+                                                                right="put", strike_price=strike_price)
+                    price = pd.DataFrame(detail['Success'])
+                    premium = price['ltp'][0] 
+    
+                    Put_Buy = round(premium, 2)
+                    right = 'Put_Buy'
+                    entry_time = datetime.now().strftime('%H:%M:%S')
+                    tgt = Put_Buy + target
+                    sl = Put_Buy - stoploss
+                    order = -1
+                    entry_time = datetime.strptime(entry_time, '%H:%M:%S')
+                    entry_time = current_time.replace(hour=entry_time.hour, minute=entry_time.minute, second=entry_time.second, microsecond=0)
+                    print(f"{now} Volume-Based Put Buy at: {Put_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
+                    logging.info(f"{now} Volume-Based Put Buy at: {Put_Buy}, strike_price: {strike_price}, Target: {tgt}, Stoploss: {sl}")
+                    break
+                candle_count += 1
+                time.sleep(60)
+                
     # Exit Conditions
     if order in [1, -1]:
         print(f"Checking exit conditions at {now}")
@@ -351,18 +450,17 @@ while True:
             ltp = pd.DataFrame(detail['Success'])
             premium = ltp['ltp'][0] 
             
-            if premium >= sl + factor + 15:
-                sl = adjust_trailing_sl(premium, sl, factor, order)
+            if premium >= sl + 1 + 15:
+                sl = adjust_trailing_sl(premium, sl, order)
                 print(f"Stop Loss trailed. Premium: {premium}, New SL: {sl}")
                 logging.info(f"Stop Loss trailed. Premium: {premium}, New SL: {sl}")
                 
-            if premium >= tgt:
-                exit_reason = 'Target Hit'
-            elif premium <= sl:
+
+            if premium <= sl:
                 exit_reason = 'Stoploss Hit'
             elif time_difference > 30:
                 exit_reason = '30 candle hit'
-            elif t(now.hour, now.minute) == t(9, 50):
+            elif t(now.hour, now.minute) == t(15, 20):
                 exit_reason = 'Market Close'
                 
         elif order == -1:
@@ -372,18 +470,17 @@ while True:
             ltp = pd.DataFrame(detail['Success'])
             premium = ltp['ltp'][0] 
             
-            if premium >= sl + factor + 15:
-                sl = adjust_trailing_sl(premium, sl, factor, order)
+            if premium >= sl + 1 + 15:
+                sl = adjust_trailing_sl(premium, sl, order)
                 print(f"Stop Loss trailed. Premium: {premium}, New SL: {sl}")
                 logging.info(f"Stop Loss trailed. Premium: {premium}, New SL: {sl}")
                 
-            if premium >= tgt:
-                exit_reason = 'Target Hit'
-            elif premium <= sl:
+
+            if premium <= sl:
                 exit_reason = 'Stoploss Hit'
             elif time_difference > 30:
                 exit_reason = '30 candle hit'
-            elif t(now.hour, now.minute) == t(9, 50):
+            elif t(now.hour, now.minute) == t(15, 20):
                 exit_reason = 'Market Close'
         
         if exit_reason:
@@ -400,11 +497,5 @@ while True:
             log_trade_to_csv(today, entry_time, Call_Buy if order == 1 else Put_Buy, right, premium, exit_time, exit_reason, pnl)
             
             order = 2
-            orb = False
-        else:
-            if orb:
-                sl = adjust_trailing_sl(premium, sl, 2, order)
-                print(f"Trailing Stoploss adjusted to {sl} at price {premium}")
-                logging.info(f"Trailing Stoploss adjusted to {sl} at price {premium}")
 
     time.sleep(1)
